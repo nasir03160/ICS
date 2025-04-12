@@ -1,0 +1,31 @@
+"""
+Malware Simulation Framework - FOR EDUCATIONAL PURPOSES ONLY
+
+This software is designed to simulate malware behavior in a controlled environment
+for educational and research purposes. DO NOT use this in a production environment
+or against systems without explicit permission.
+
+Safety measures:
+1. All simulations are run in sandbox mode by default
+2. No actual system compromises are attempted
+3. Data exfiltration only goes to specified test server
+4. Worm propagation is simulated but not executed
+
+Usage:
+python malware_simulation.py --userid "test" --mode "all" --sandbox
+
+Modes:
+- keylogger: Simulates keystroke logging
+- data_stealing: Simulates sensitive data collection
+- persistence: Simulates malware persistence techniques
+- worm: Simulates worm-like network propagation
+- av_evasion: Tests anti-virus evasion techniques
+- all: Runs all simulation components
+
+
+
+Use PyArmor to obfuscate Python code and PyInstaller to compile into an executable.
+
+
+
+"""
