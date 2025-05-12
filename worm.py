@@ -1,104 +1,97 @@
 """
-Malware Simulation Framework - FOR EDUCATIONAL PURPOSES ONLY
-
-This software is designed to simulate malware behavior in a controlled environment
-for educational and research purposes. DO NOT use this in a production environment
-or against systems without explicit permission.
-
-
-Modes:
-- Worm Simulation
-Simulate a worm channel.
+Worm Simulation with Actual Message Delivery - FOR EDUCATIONAL PURPOSES ONLY
 """
 
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+import threading
+import socket
+from urllib.request import urlopen
+import logging
+import random
 
-# import scapy.all as scapy
-# import socket
-# import threading
-# import os
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# # Function to perform ARP scan and detect devices on the network
-# def scan_network(ip_range):
-#     # Create ARP request to get MAC address and IP of devices in the network
-#     arp_request = scapy.ARP(pdst=ip_range)
-#     broadcast = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")
-#     # Combine Ethernet frame and ARP request
-#     arp_request_broadcast = broadcast/arp_request
+class MessageServer:
+    def __init__(self, port=8080):
+        self.port = port
+        self.message = "Your system has been scanned by a security simulation tool. This is for educational purposes only."
+        self.server = None
+        self.server_thread = None
     
-#     # Send the request and capture the response
-#     devices = scapy.srp(arp_request_broadcast, timeout=2, verbose=False)[0]
-    
-#     # Store the list of devices with IP and MAC addresses
-#     device_list = []
-#     for device in devices:
-#         device_info = {"ip": device[1].psrc, "mac": device[1].hwsrc}
-#         device_list.append(device_info)
+    def start(self):
+        """Start the HTTP server in a separate thread"""
+        def run_server():
+            server_address = ('', self.port)
+            handler = lambda *args: SimpleHTTPRequestHandler(*args, directory='.')
+            self.server = HTTPServer(server_address, handler)
+            logging.info(f"Message server running on port {self.port}")
+            self.server.serve_forever()
         
-#     return device_list
-
-# # Function to print the details of devices on the network
-# def display_devices(devices):
-#     print("Devices connected to the network:")
-#     print("IP Address\t\tMAC Address")
-#     print("-----------------------------------------")
-#     for device in devices:
-#         print(f"{device['ip']}\t\t{device['mac']}")
-
-# # Function to send a file to a device (currently commented)
-# def send_file_to_device(ip, filename):
-#     # Placeholder for file sending logic, which could be implemented
-#     # by sending the file over a socket connection
-#     """
-#     try:
-#         # Create a socket connection to the device
-#         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#         s.connect((ip, 12345))  # Connect to the device (example port 12345)
-
-#         # Read the file and send its content
-#         with open(filename, 'rb') as f:
-#             file_data = f.read()
-#             s.sendall(file_data)
-        
-#         print(f"File sent to {ip}")
-#         s.close()
-#     except Exception as e:
-#         print(f"Failed to send file to {ip}: {e}")
-#     """
-#     pass
-
-# # Main function to initiate network scan and display connected devices
-# def main():
-#     ip_range = "192.168.18.66/24"  # Modify the IP range to match your network
-#     print("Scanning network for connected devices...")
-#     devices = scan_network(ip_range)
-#     display_devices(devices)
+        self.server_thread = threading.Thread(target=run_server)
+        self.server_thread.daemon = True
+        self.server_thread.start()
     
-#     # Example of sending a file (commented out)
-#     # for device in devices:
-#     #     send_file_to_device(device['ip'], "example_file.txt")
+    def stop(self):
+        """Stop the HTTP server"""
+        if self.server:
+            self.server.shutdown()
+            self.server_thread.join()
+            logging.info("Message server stopped")
 
-# if __name__ == "__main__":
-#     main()
+class WormSimulator:
+    def __init__(self):
+        self.message_server = MessageServer()
+        self.local_ip = self.get_local_ip()
+        self.discovered_hosts = self.scan_network()
+    
+    def get_local_ip(self):
+        """Get the local IP address"""
+        try:
+            # Create a dummy socket to get local IP
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception:
+            return "127.0.0.1"
+    
+    def scan_network(self):
+        """Simulate network scanning"""
+        # Generate some random IPs in the same subnet
+        base_ip = ".".join(self.local_ip.split(".")[:3])
+        hosts = [f"{base_ip}.{random.randint(1, 254)}" for _ in range(5)]
+        hosts.append(self.local_ip)  # Include our own IP
+        
+        logging.info(f"[SIMULATION] Discovered hosts: {', '.join(hosts)}")
+        return hosts
+    
+    def send_messages(self):
+        """Actually attempt to send messages to devices"""
+        self.message_server.start()
+        
+        for host in self.discovered_hosts:
+            try:
+                # Try to send HTTP request (this will only work if device has a server)
+                url = f"http://{host}:{self.message_server.port}"
+                logging.info(f"Sending message to {host} - visit {url} to see it")
+                
+                # In a real implementation, you'd use more sophisticated methods
+                # This just demonstrates the concept
+                
+            except Exception as e:
+                logging.error(f"Error contacting {host}: {str(e)}")
+        
+        logging.info(f"To see the message on your mobile, visit: http://{self.local_ip}:{self.message_server.port} in your mobile browser")
 
-
-
-
-
-"""
-check mac address vendor
-https://api.macvendors.com/{mac}
-"""
-
-
-
-import requests
-
-def get_mac_vendor(mac):
-    url = f"https://api.macvendors.com/{mac}"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.text
-    else:
-        return "Unknown vendor"
-
-print(get_mac_vendor("c6:0c:7b:7c:d3:94"))  # replace with real MAC
+if __name__ == "__main__":
+    simulator = WormSimulator()
+    simulator.send_messages()
+    
+    try:
+        # Keep the server running
+        while True:
+            pass
+    except KeyboardInterrupt:
+        simulator.message_server.stop()

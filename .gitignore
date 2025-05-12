@@ -1,2 +1,9 @@
 myenv
 backend/_pycache_
+build
+dist
+keystrokes.txt
+main.spec
+obfuscate.spec
+__pycache__
+pyarmour.bug.log

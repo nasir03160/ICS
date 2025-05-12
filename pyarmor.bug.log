@@ -1,0 +1,12 @@
+[BUG]: no found input "project"
+
+## Command Line
+D:\projects\ICS\myenv\Scripts\pyarmor gen project main_project
+
+## Environments
+Python 3.12.5
+Pyarmor 9.1.5 (trial), 000000, non-profits
+Platform windows.x86_64
+Native windows.amd64
+Home C:\Users\Dell\.pyarmor
+
